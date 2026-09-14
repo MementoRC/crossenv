@@ -464,8 +464,12 @@ class CrossEnvBuilder(venv.EnvBuilder):
                 )
 
     def _split_apple_os_version(self, value):
-        # Split the Apple OS version from the OS name prefix.
-        if value.startswith("ios"):
+        # Split the Apple OS version from the OS name prefix. On macOS the
+        # version is the Darwin kernel version, not the macOS version, so it
+        # is only used to normalize the triple for comparison.
+        if value.startswith("darwin"):
+            offset = 6
+        elif value.startswith("ios"):
             offset = 3
         elif value.startswith("tvos"):
             offset = 4
