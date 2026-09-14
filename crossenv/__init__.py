@@ -616,6 +616,15 @@ class CrossEnvBuilder(venv.EnvBuilder):
             "EXT_SUFFIX"
         ]
 
+        # CPython lists the abi3 suffixes in Python/dynload_shlib.c. The plain
+        # ".abi3" entries are inside an "#ifndef Py_GIL_DISABLED" block, so a
+        # free-threaded build has only the ".abi3t" forms in its filetab.
+        # Pick the one the HOST interpreter can actually load.
+        if self.host_sysconfigdata.build_time_vars.get("Py_GIL_DISABLED"):
+            self.sysconfig_abi3_suffix = ".abi3t.so"
+        else:
+            self.sysconfig_abi3_suffix = ".abi3.so"
+
         # Normalize case of the host system/sysname.
         self.host_system = {
             "ios": "iOS",
