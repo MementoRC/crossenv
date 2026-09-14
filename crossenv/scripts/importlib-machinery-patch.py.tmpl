@@ -29,8 +29,4 @@ def _PathFinder_find_spec(cls, fullname, path=None, target=None):
 
 PathFinder.find_spec = _PathFinder_find_spec
 
-EXTENSION_SUFFIXES = [
-    {{repr(self.sysconfig_ext_suffix)}},
-    {{repr(self.sysconfig_abi3_suffix)}},
-    ".so",
-]
+EXTENSION_SUFFIXES = {{repr(self.sysconfig_extension_suffixes)}}

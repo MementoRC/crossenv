@@ -294,3 +294,47 @@ def test_machine_override(tmp_path, host_python, build_python):
     )
     out = out.strip()
     assert out == "foobar foobar"
+
+
+def test_abi3_extension_suffixes(crossenv):
+    out = crossenv.check_output(
+        [
+            "python",
+            "-c",
+            dedent("""\
+            import sys
+            import sysconfig
+            from importlib.machinery import EXTENSION_SUFFIXES
+            print(sys.version_info.major, sys.version_info.minor)
+            print(1 if sysconfig.get_config_var("Py_GIL_DISABLED") else 0)
+            print(" ".join(EXTENSION_SUFFIXES))
+            """),
+        ],
+        universal_newlines=True,
+    )
+    version_line, gil_line, suffix_line = out.strip().splitlines()
+    version_info = tuple(int(part) for part in version_line.split())
+    free_threaded = gil_line == "1"
+    suffixes = suffix_line.split()
+
+    ext_suffix = suffixes[0]
+    assert suffixes[-1] == ".so"
+
+    abi3 = [suffix for suffix in suffixes if ".abi3" in suffix]
+
+    if version_info < (3, 15):
+        # Free-threaded builds had no stable ABI before 3.15, and the
+        # platform-tagged forms did not exist yet.
+        assert abi3 == ([] if free_threaded else [".abi3.so"])
+        return
+
+    # setuptools get_abi3_suffix() returns the first entry containing ".abi3",
+    # so the untagged form has to come first.
+    stem = ".abi3t" if free_threaded else ".abi3"
+    assert abi3[0] == stem + ".so"
+
+    # Any platform-tagged form must carry the host's own tag, not the build
+    # machine's.
+    for suffix in abi3[1:]:
+        tag = suffix.split("-", 1)[1]
+        assert ext_suffix.endswith("-" + tag)
