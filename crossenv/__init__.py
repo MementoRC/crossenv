@@ -464,19 +464,11 @@ class CrossEnvBuilder(venv.EnvBuilder):
                 )
 
     def _split_apple_os_version(self, value):
-        # Split the Apple OS version from the OS name prefix. On macOS the
-        # version is the Darwin kernel version, not the macOS version, so it
-        # is only used to normalize the triple for comparison.
-        if value.startswith("darwin"):
-            offset = 6
-        elif value.startswith("ios"):
-            offset = 3
-        elif value.startswith("tvos"):
-            offset = 4
-        elif value.startswith("watchos"):
-            offset = 7
-        else:
-            raise ValueError("Unknown Apple compiler triple.")
+        # Split the Apple OS version from the OS name prefix (e.g. ios13.0 ->
+        # ios, 13.0). No Apple OS name contains a digit, so the version starts
+        # at the first one. On macOS the version is the Darwin kernel version
+        # (e.g. darwin23.4.0), not the macOS version.
+        offset = next((i for i, c in enumerate(value) if c.isdigit()), len(value))
         return value[:offset], value[offset:]
 
     def _clean_triple(self, triple):
